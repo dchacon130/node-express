@@ -1,21 +1,57 @@
 const express = require('express')
+const jwt = require('jsonwebtoken');
+
 const app = express();
 
 let tasks = require('./tasksdb');
 
 app.use(express.json());
 
+const SECRET_KEY = 'NODE-EXPRESS'
+
 const generateId = () => {
     const maxId = tasks.length > 0 ? Math.max(...tasks.map(n => n.id)) : 0;
     return maxId + 1;
 }
+
+function autenticar(req, res, next) {
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token){
+        res.status(401).json({
+            error: 'No access token filed'
+        });
+    }
+    try{
+        const  decoded = jwt.verify(token, SECRET_KEY);
+        req.usuario = decoded;
+        next();
+    } catch(error){
+        res.status(403).json({
+            error: 'Token Invalido'
+        });
+    }
+}
+
+app.post('/login', (req, res) => {
+    const {user, pass} = req.body;
+    if( user === 'diego' && pass === '123'){
+        const token = jwt.sign({user}, SECRET_KEY, { expiresIn: '1h' });
+        res.json({ token });
+    }else{
+        res.status(401).json({
+            error: 'Invalid credentials'
+        });
+    }
+});
 
 app.get('/', (req, res) => {
     const message = "<h1>Vivito y coleando!</h1>";
     res.send(message);
 });
 
-app.get('/tasks',  (req, res) => {
+app.get('/tasks',  autenticar, (req, res) => {
     res.json(tasks)
 });
 
@@ -29,7 +65,7 @@ app.get('/tasks/:id',  (req, res) => {
     }
 });
 
-app.post('/tasks', (req, res) => {
+app.post('/tasks', autenticar,(req, res) => {
     const body = req.body;
     
     if(!body.title){
@@ -48,7 +84,7 @@ app.post('/tasks', (req, res) => {
     }
 });
 
-app.put('/tasks/:id',  (req, res) => {
+app.put('/tasks/:id',  autenticar, (req, res) => {
     const id = Number(req.params.id);
     const body = req.body;
 
@@ -68,7 +104,7 @@ app.put('/tasks/:id',  (req, res) => {
     }
 });
 
-app.delete('/tasks/:id', (req,res) => {
+app.delete('/tasks/:id', autenticar, (req,res) => {
     const id = Number(req.params.id);
     tasks = tasks.filter(note => note.id !== id);
     res.status(204).json(tasks);
