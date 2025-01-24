@@ -1,11 +1,16 @@
 const express = require('express')
 const jwt = require('jsonwebtoken');
+const cors = require('cors');
+
 
 const app = express();
 
 let tasks = require('./tasksdb');
 
 app.use(express.json());
+app.use(cors(
+    {origin: 'http://localhost:5173'}
+)); 
 
 const SECRET_KEY = 'NODE-EXPRESS'
 
@@ -51,7 +56,7 @@ app.get('/', (req, res) => {
     res.send(message);
 });
 
-app.get('/tasks',  autenticar, (req, res) => {
+app.get('/tasks', (req, res) => {
     res.json(tasks)
 });
 
@@ -65,7 +70,7 @@ app.get('/tasks/:id',  (req, res) => {
     }
 });
 
-app.post('/tasks', autenticar,(req, res) => {
+app.post('/tasks',(req, res) => {
     const body = req.body;
     
     if(!body.title){
@@ -104,7 +109,9 @@ app.put('/tasks/:id',  autenticar, (req, res) => {
     }
 });
 
-app.delete('/tasks/:id', autenticar, (req,res) => {
+
+
+app.delete('/tasks/:id', (req,res) => {
     const id = Number(req.params.id);
     tasks = tasks.filter(note => note.id !== id);
     res.status(204).json(tasks);
