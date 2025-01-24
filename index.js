@@ -113,8 +113,17 @@ app.put('/tasks/:id',  autenticar, (req, res) => {
 
 app.delete('/tasks/:id', (req,res) => {
     const id = Number(req.params.id);
-    tasks = tasks.filter(note => note.id !== id);
-    res.status(204).json(tasks);
+    const result = tasks.findIndex(task => task.id === id);
+    if(result !== -1){
+        tasks.splice(result, 1);
+        res.status(204).end();
+    }else{
+        console.log(`Task ${id} not found`)
+        res.status(404).json({
+            success: false, 
+            message: `Task ${id} not found`
+        }).end();
+    } 
 });
 
 
